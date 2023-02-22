@@ -15,7 +15,9 @@ contract Faucet {
   
   error earlyWithdrawal(uint timeRemianing);
 
+  // Follow the Checks-Effects-Interactions pattern to protect against reentrancy attacks
   function withdraw(uint amount) external {
+    // Checks //
     uint timeSinceLastWithdrawal = block.timestamp - lastWithdrawal[msg.sender];
     if (timeSinceLastWithdrawal < minWindow) {
       revert earlyWithdrawal(300 - timeSinceLastWithdrawal);
@@ -26,8 +28,12 @@ contract Faucet {
     // contract must have sufficient funds
     require(address(this).balance > amount, "Insufficient funds in faucet");
 
-    payable(msg.sender).transfer(amount);
-    lastWithdrawal[msg.sender] = block.timestamp;
+    // Effects //
+    lastWithdrawal[msg.sender] = block.timestamp; 
+
+    // Interactions //
+    (bool s, ) = msg.sender.call{ value: amount }("");
+    require(s);
   }
 
   // fallback function
