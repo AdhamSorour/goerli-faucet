@@ -3,8 +3,8 @@ pragma solidity ^0.8.17;
 
 contract Faucet {
   mapping (address => uint) private lastWithdrawal;
-  uint public maxWithdrawal; // max withdrawal amount per transaction
-  uint public minWindow;     // min time between withdrawals for a given address
+  uint public maxWithdrawal; // max withdrawal amount per transaction (in wei)
+  uint public minWindow;     // min time between withdrawals for a given address (in seconds)
   address private owner;
 
   constructor(uint _maxWithdrawal, uint _minWindow) {

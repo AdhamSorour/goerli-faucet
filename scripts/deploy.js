@@ -1,11 +1,14 @@
-const ethers = require('ethers');
 require('dotenv').config();
+const { maxWithdrawal, minWindow } = require('../faucet.json');
 
 async function main() {
   const factory = await ethers.getContractFactory("Faucet");
-  const faucet = await factory.deploy();
+  const faucet = await factory.deploy(maxWithdrawal, minWindow);
   await faucet.deployed();
-  console.log("Faucet address:", faucet.address);
+
+  console.log("Faucet deployed at address:", faucet.address);
+  console.log(`Withdrawal limit: ${maxWithdrawal} wei`);
+  console.log(`Time limit: ${minWindow} seconds`);
 }
 
 main().catch((error) => {
