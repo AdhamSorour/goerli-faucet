@@ -20,12 +20,9 @@ contract Faucet {
     // Checks //
     uint timeSinceLastWithdrawal = block.timestamp - lastWithdrawal[msg.sender];
     if (timeSinceLastWithdrawal < minWindow) {
-      revert earlyWithdrawal(300 - timeSinceLastWithdrawal);
+      revert earlyWithdrawal(minWindow - timeSinceLastWithdrawal);
     }
-
     require(amount <= maxWithdrawal, "Withdrawal limit exceeded");
-
-    // contract must have sufficient funds
     require(address(this).balance > amount, "Insufficient funds in faucet");
 
     // Effects //
@@ -33,7 +30,7 @@ contract Faucet {
 
     // Interactions //
     (bool s, ) = msg.sender.call{ value: amount }("");
-    require(s);
+    require(s, "Failed to withdraw");
   }
 
   // fallback function
@@ -50,5 +47,14 @@ contract Faucet {
 
   function setMinWindow(uint newWindow) external onlyOwner {
     minWindow = newWindow;
+  }
+
+  function withdrawAll() external onlyOwner {
+    (bool s, ) owner.call{ value: address(this).balance }("");
+    require(s, "Failed to withdraw");
+  }
+
+  function destroy() external onlyOwner {
+    selfdestruct(owner);
   }
 }
