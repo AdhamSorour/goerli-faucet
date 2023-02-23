@@ -50,11 +50,11 @@ contract Faucet {
   }
 
   function withdrawAll() external onlyOwner {
-    (bool s, ) owner.call{ value: address(this).balance }("");
+    (bool s, ) = owner.call{ value: address(this).balance }("");
     require(s, "Failed to withdraw");
   }
 
   function destroy() external onlyOwner {
-    selfdestruct(owner);
+    selfdestruct(payable(owner));
   }
 }
