@@ -30,14 +30,14 @@ describe("Faucet", function () {
 		// Contracts are deployed using the first signer/account by default
 		const [owner, otherAccount] = await ethers.getSigners();
 
-		const ONE_GWEI = 1_000_000_000;
+		const totalFunds = 1_000_000_000;
 		await owner.sendTransaction({
 			to: faucet.address,
-			value: ONE_GWEI,
+			value: totalFunds,
 			data: "0x" // data must be empty to invoke receive fallback
 		});
 	
-		return { faucet, MAX_WITHDRAWAL, MIN_WINDOW, owner, otherAccount };
+		return { faucet, MAX_WITHDRAWAL, MIN_WINDOW, owner, otherAccount, totalFunds };
 	}
 
 	describe("Deployment", function() {
@@ -115,6 +115,23 @@ describe("Faucet", function () {
 				);
 			});
 		});
+
+		describe("Cash Out", function() {
+			it("Should transfer all funds to the owner", async function() {
+				const { faucet, owner, totalFunds } = await loadFixture(deployContractWithFundsFixture);
+				await expect(faucet.withdrawAll()).to.changeEtherBalances(
+					[owner, faucet],
+					[totalFunds, -totalFunds]
+				);
+			});
+
+			it("Should fail if not owner", async function() {
+				const { faucet, otherAccount } = await loadFixture(deployContractWithFundsFixture);
+				await expect(faucet.connect(otherAccount).withdrawAll()).to.be.revertedWith(
+					"Not Owner"
+				);
+			})
+		});
 	});
 
 	describe("Setters", function() {
@@ -144,6 +161,23 @@ describe("Faucet", function () {
 			const { faucet, otherAccount, MIN_WINDOW } = await loadFixture(deployContractFixture);
 			await expect(faucet.connect(otherAccount).setMinWindow(MIN_WINDOW*2))
 			.to.be.revertedWith("Not Owner");
+		});
+	});
+
+	describe("Destruct", function() {
+		it("Should send funds back to owner", async function() {
+			const { faucet, owner, totalFunds } = await loadFixture(deployContractWithFundsFixture);
+			await expect(faucet.destroy()).to.changeEtherBalances(
+				[owner, faucet],
+				[totalFunds, -totalFunds]
+			);
+		});
+
+		it("Should delete the byte code", async function() {
+			const { faucet } = await loadFixture(deployContractFixture);
+			expect(await ethers.provider.getCode(faucet.address)).to.not.be.equal("0x");
+			await faucet.destroy();
+			expect(await ethers.provider.getCode(faucet.address)).to.equal("0x");
 		});
 	});
 });
